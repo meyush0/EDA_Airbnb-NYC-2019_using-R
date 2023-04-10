@@ -1,4 +1,4 @@
-#Airbnb NYC 2019 Data Analysis
+Airbnb NYC 2019 Data Analysis
 #Introduction
 The purpose of this project is to analyze the Airbnb NYC 2019 dataset and provide insights into various aspects of the data. The dataset contains information on Airbnb listings in New York City, such as the price, location, host information, reviews, and availability.
 
