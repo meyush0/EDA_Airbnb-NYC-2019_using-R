@@ -1,0 +1,274 @@
+---
+title: "My R Markdown Document"
+output: html_document
+language: R
+---
+```{r}
+# load required packages
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+library(reshape2)
+```
+
+```{r}
+#' loading of data
+my_data <- read.csv("C:/Users/Hp/Downloads/Airbnb NYC 2019.csv")
+
+```
+
+
+```{r}
+
+#' display the contents of the data frame
+head(my_data)
+```
+```{r}
+## check structure and summary of data-set
+
+#The output shows that my_data is a data frame with 48,895 observations and 16 variables
+str(my_data)
+```
+
+
+```{r}
+#' The summary provides information on the minimum and maximum values
+#'  as well as the median and mean values
+summary(my_data)
+```
+
+
+```{r}
+#  shows the data type of each column, the first few values of each column
+glimpse(my_data)
+```
+
+
+```{r}
+
+# checked the distribution of the "price" variable using a histogram.
+ggplot(my_data, aes(x = price)) +
+  geom_histogram(fill = "#69b3a2", color = "black")
+```
+
+### data cleaning__________
+```{r}
+# for finding the sum of total null values
+sum(is.na(my_data))
+```
+
+
+```{r}
+# Compute the number of missing values for each column
+sum_null_values <- colSums(is.na(my_data))
+print(sum_null_values)
+
+```
+
+
+```{r}
+# Plot the number of missing values for each column
+barplot(sum_null_values, main = "Number of missing values per column", 
+        xlab = "Columns", ylab = "Number of missing values")
+```
+
+#from the plot we understand that the null values are appear in the column "reviews_per_month" only.
+#"so in next step we drop all the null values in the data-set
+
+```{r}
+## Drop rows with Null values in the "reviews_per_month" column
+my_data <- my_data[complete.cases(my_data$reviews_per_month), ]
+```
+
+
+```{r}
+sum(is.na(my_data))
+```
+the null values is eliminated
+
+```{r}
+#for cheaking the duplicates in the data-set
+duplicates <- my_data[duplicated(my_data),]
+
+```
+
+#there are no duplicated in the data-set
+```{r}
+
+ # conduct ANOVA
+ model <- lm(price ~ room_type, data = my_data)
+ summary(model)
+ 
+ #The p-values for both predictor variables are less than 0.001, indicating that both variables are statistically significant predictors of price. 
+ #The adjusted R-squared value of 0.08269 suggests that the model explains only a small proportion of the variation in price.
+ 
+
+
+```
+
+
+#let's explore the relationships between variables using scatter-plots and correlation matrices
+
+#scatter-plot of price vs. number of reviews
+
+```{r}
+ ggplot(my_data, aes(x = number_of_reviews, y = price)) +
+    geom_point() +
+    labs(x = "Number of Reviews", y = "Price", 
+         title = "Price vs. Number of Reviews")
+```
+#Based on the above data, we can conclude that as the price increases, 
+# the number of reviews decreases. Additionally, 
+# the majority of reviews come from the price range of 0-2500.
+# Therefore, we can infer that price is a significant factor when booking a room.
+
+
+# Compute correlation matrix of numerical variables
+#'in the data-set to see which variables are most strongly correlated with "price".
+
+
+```{r}
+  num_cols <- sapply(my_data, is.numeric)
+ num_data <- my_data[, num_cols]
+ corr_matrix <- cor(num_data)
+ print(corr_matrix)
+```
+# we can see that there are some variables that are positively correlated with each other
+#such as host_id and calculated_host_listings_count, which have a correlation coefficient of 0.149. 
+   
+#there are variables that are negatively correlated with each other, such as number_of_reviews and
+#availability_365, which have a correlation coefficient of -0.194. 
+
+```{r}
+# plot a heatmap of the correlation matrix
+ heatmap(corr_matrix, 
+         col = colorRampPalette(c("white", "blue"))(100), 
+         scale = "none", 
+         symm = TRUE,
+         margins = c(10,10),
+         main = "Correlation Matrix Heatmap",
+         xlab = "Variables", 
+         ylab = "Variables")
+```
+#to find the outliers
+
+
+```{r}
+ 
+ # Scatter-plot of price vs. availability_365 
+ ggplot(my_data, aes(x = availability_365 , y = price)) +
+   geom_point() +
+   labs(x = "availability_365 ", y = "Price", 
+        title = "Price vs. availability_365 ")
+```
+# from the scatter plot we able to understand that 0-2500 price range most are availability
+# all around 360 days
+
+```{r}
+ 
+ # Scatter-plot of price vs minimum_nights 
+ ggplot(my_data, aes(x =minimum_nights, y = price)) +
+   geom_point() +
+   labs(x = "minimum_nights ", y = "Price", 
+        title = "Price vs.minimum_nights")
+```
+#from the scatter plot we conclude that the price range 0-2500 is the price range which have minimum night spends where as you see as price increases the minimum night stays was decreasing as this indicates the price factor is the most important thing when comes to hotel choosing.
+ 
+
+ 
+#now we have to check whether there is any relationship between price and categorical variable or not.
+```{r}
+#price vs neighbourhood_group
+ ggplot(my_data, aes(x = neighbourhood_group, y = price)) +
+   geom_bar(stat = "summary", fun = "mean") +
+   labs(x = "neighbourhood_group", y = "Price", 
+        title = "Price vs. neighbourhood_group")
+ 
+
+```
+#from above graph we easily conclude that 'Manhattan' is the most expensive place where price is very high followed by 'Brooklyn' & 'Queens' the least expensive is 'Bronx' and 'Staten island'.
+ 
+
+```{r}
+
+ #price vs neighborhood
+ 
+ ggplot(data = my_data, aes(x =price , y = neighbourhood)) +
+   stat_summary(fun = "mean", geom = "bar", fill = "#99c2a2") +
+   coord_flip() +
+   labs(x = "Price", y = "neighbourhood", 
+        title = " Price by Neighborhood")
+```
+# from the above graph you can easily see the 'Manhattan' have highest prices across all the places
+
+
+```{r}
+#price Vs number of reviews Vs neighborhood_group  
+ 
+ ggplot(data = my_data, aes(x = price, y = number_of_reviews, color = neighbourhood_group)) +
+   geom_point(alpha = 0.5) +
+   scale_color_manual(values = c("#1b9e77", "#d95f02", "#7570b3", "#e7298a", "#66a61e")) +
+   labs(x = "Price", y = "Number of Reviews", color = "Neighborhood Group",
+        title = "R celationship between Price, Number of Reviews, and Neighborhood Group")
+```
+
+
+#from this its is clear that Queens and Manhattan have highest number of reviews so its conclude that the more expensive the hotel the reviews are also increases
+```{r}
+ 
+ # Create a box plot of Price Vs room_type
+ ggplot(data = my_data, aes(x = room_type, y = price)) +
+   geom_boxplot() +
+   labs(title = "Price Vs. Room Type", x = "Room Type", y = "Price")
+ 
+
+```
+```{r}
+#Scatter-plot of "price" vs. "latitude" and "longitude" colored by "neighborhood_group"
+ ggplot(data = my_data, aes(x = longitude, y = latitude, color = neighbourhood_group)) +
+   geom_point(aes(size = price)) +
+   scale_color_brewer(type = "qual", palette = "Set2") +
+   labs(title = "Price by Location VS Neighbourhood Group",
+        x = "Longitude",
+        y = "Latitude",
+        color = "Neighbourhood Group",
+        size = "Price")
+
+
+
+```
+
+
+
+
+
+
+
+#so by the above Analysis we conclude that_________.
+
+
+#(1)=  Price is a significant factor when booking a room on Airbnb. The majority of reviews come from the price range of 0-2500, and as the price increases, the number of reviews decreases.
+#(2)= The most expensive place to stay in NYC is Manhattan, followed by Brooklyn and Queens. The least expensive is the Bronx and Staten Island.
+#(3)= There are variables that are positively correlated with each other, such as host_id and calculated_host_listings_count. Additionally, there are variables that are negatively correlated with each other, such as number_of_reviews and availability_365.
+#(4)= Neighborhood is also an essential factor when booking a room on Airbnb. Some neighborhoods are more expensive than others, and certain neighborhoods are more popular than others.
+#(5)= Based on the scatter plots, the price range of 0-2500 is the most common range that most people book a room, and minimum nights between 0-400 are the most popular.
+
+```{r}
+#we can use these conclusions and recommendations to gain insights into the Airbnb market in NYC and make data-driven decisions on pricing, marketing, and location.
+```
+
+```{r}
+
+```
+
+
+```{r}
+```
+
+
+```{r}
+```
+
+
+```{r}
+```
